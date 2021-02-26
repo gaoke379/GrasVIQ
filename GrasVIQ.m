@@ -40,7 +40,7 @@ EXPORT_CSV = 1; % export extracted measurements to csv files
 EXPORT_IMG = 1; % save segmentation and classification images to png files
 IMG_FILE_PATH = './Data/'; % path for input images
 IMG_FILE_TYPE = 'png'; % file extension (e.g. png, jpg, jpeg)
-SCALE_FACTOR = 0.6167; % pixels per micrometer (px/um)
+SCALE_FACTOR = 0.6167; % pixels per micrometer (px/um); assume all images in the given input path share the same scale
 
 % %-- Image file path
 if ~exist(IMG_FILE_PATH, 'dir')  % check if image path is valid
