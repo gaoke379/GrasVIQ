@@ -34,12 +34,13 @@ close all;
 % clf;
 
 % %-- Parameters
-IS_JUVENILE = 1; % flag for processing juvenile leaf images vs. adult leaf images (1: juvenile; 0: adult)
+IS_JUVENILE = 1; % set to 1 if processing juvenile leaf images or 0 for adult leaf images (1: juvenile; 0: adult)
 DEBUG = 0; % visualize intermediate results for debugging
 EXPORT_CSV = 1; % export extracted measurements to csv files
 EXPORT_IMG = 1; % save segmentation and classification images to png files
-IMG_FILE_PATH = '/home/kegao/Files/Research/Leaf_Image_Analysis/Data/Test2/'; % path for input images
-IMG_FILE_TYPE = 'jpeg'; % file extension (e.g. png, jpg, jpeg)
+IMG_FILE_PATH = './Data/'; % path for input images
+IMG_FILE_TYPE = 'png'; % file extension (e.g. png, jpg, jpeg)
+SCALE_FACTOR = 0.6167; % pixels per micrometer (px/um)
 
 % %-- Image file path
 if ~exist(IMG_FILE_PATH, 'dir')  % check if image path is valid
@@ -195,10 +196,8 @@ for fr = 1:nImages
                     rowSumBgOneLabel = sum(imgGrayNormBgOneLabel,2);
                     rowSumBgOneLabel = rowSumBgOneLabel / max(rowSumBgOneLabel);
                     rowSumBgOneLabel = smooth(rowSumBgOneLabel, round(min(rowsOrig, colsOrig)/34)); % smooth the 1-D signal
-                    % figure(5); bar(rowSumBgOneLabel);
                     bgOneLabelProjH = AdaptiveThreshold(rowSumBgOneLabel, round(min(rowsOrig, colsOrig)/9), 0.2, 0); % binarization using adaptive thresholding
                     bgOneLabelProjH = 1 - bgOneLabelProjH;
-                    % figure(6); bar(bgOneLabelProjH);
                     bgOneLabelProjLabel = bwlabel(bgOneLabelProjH);
                     bgOneLabelProjLabelStats = regionprops('table', logical(bgOneLabelProjH), 'Area', 'Centroid');
                     bgOneLabelProjLabelAreas = bgOneLabelProjLabelStats.Area;
@@ -215,7 +214,6 @@ for fr = 1:nImages
                     imgBgOneLabelQuatVeinMask = and(imgBgOneLabelQuatVeinMask, maskTemp); % detected quaternary vein in the current BG area
                     se4 = strel('rectangle', [round(min(rowsOrig, colsOrig)/55),1]);
                     imgBgOneLabelQuatVeinMask = imclose(imgBgOneLabelQuatVeinMask, se4); % merge over-segmented quaternary veins
-                    % figure(7); imshow(imgBgOneLabelQuatVeinMask);
                     imgQuatVeinMask = or(imgQuatVeinMask, imgBgOneLabelQuatVeinMask);
                     % %-- compute quaternary vein interval distance (vertically)
                     quatVeinOneLabel = bwlabel(imgBgOneLabelQuatVeinMask); % connected component labeling for quaternary veins in the current BG area
@@ -288,10 +286,8 @@ for fr = 1:nImages
                 rowSumBgOneLabel = sum(imgGrayNormBgOneLabel,2);
                 rowSumBgOneLabel = rowSumBgOneLabel / max(rowSumBgOneLabel);
                 rowSumBgOneLabel = smooth(rowSumBgOneLabel, 30); % smooth the 1-D signal
-                % figure(5); bar(rowSumBgOneLabel);
                 bgOneLabelProjH = AdaptiveThreshold(rowSumBgOneLabel, 120, 0.2, 0); % binarization using adaptive thresholding
                 bgOneLabelProjH = 1 - bgOneLabelProjH;
-                % figure(6); bar(bgOneLabelProjH);
                 bgOneLabelProjLabel = bwlabel(bgOneLabelProjH);
                 bgOneLabelProjLabelStats = regionprops('table', logical(bgOneLabelProjH), 'Area', 'Centroid');
                 bgOneLabelProjLabelAreas = bgOneLabelProjLabelStats.Area;
@@ -308,7 +304,6 @@ for fr = 1:nImages
                 imgBgOneLabelQuatVeinMask = and(imgBgOneLabelQuatVeinMask, maskTemp); % detected quaternary vein in the current BG area
                 se4 = strel('rectangle', [19,1]);
                 imgBgOneLabelQuatVeinMask = imclose(imgBgOneLabelQuatVeinMask, se4); % merge over-segmented quaternary veins
-                % figure(7); imshow(imgBgOneLabelQuatVeinMask);
                 imgQuatVeinMask = or(imgQuatVeinMask, imgBgOneLabelQuatVeinMask);
                 % %-- compute quaternary vein interval distance (vertically)
                 quatVeinOneLabel = bwlabel(imgBgOneLabelQuatVeinMask); % connected component labeling for quaternary veins in the current BG area
@@ -494,6 +489,7 @@ for fr = 1:nImages
         end
     end
     veinDensity = (numSecVein + numTerVein) / (lastVeinIdxX - firstVeinIdxX); % vein density: # veins / dist(1st vein, last vein)
+    roiWidth = lastVeinIdxX - firstVeinIdxX; % width for image ROI
     
     % %-- Compute stats for quaternary veins
     imgQuatVeinLabel = bwlabel(imgQuatVeinMask); % connected component labeling
@@ -518,14 +514,25 @@ for fr = 1:nImages
         if exist(csvNameAllStats, 'file')
             fid1 = fopen(csvNameAllStats, 'a');
             fprintf(fid1, '%s\n', ' ');
-            fprintf(fid1, '%s,%d,%d,%d,%d,%d,%.2f,%.2f,%.2f,%.2f,%.6f', imgRawName(1:end-4), numSecVein+numTerVein, numSecVein, numTerVein, numQuatVein, numAbnormalCases, vertVeinWidthMean, veinDistMean, mean(quatVeinDistList), std(quatVeinDistList), veinDensity);
+            fprintf(fid1, '%s,%.2f,%.6f,%d,%.6f,%.6f,%d,%d,%d,%d,%.2f,%.6f,%.2f,%.6f,%.2f,%.6f', ...
+                imgRawName(1:end-4), roiWidth, roiWidth/SCALE_FACTOR/1000, numSecVein+numTerVein, veinDensity, ...
+                veinDensity*SCALE_FACTOR*1000, numSecVein, numTerVein, numQuatVein, numAbnormalCases, ...
+                vertVeinWidthMean, vertVeinWidthMean/SCALE_FACTOR, veinDistMean, veinDistMean/SCALE_FACTOR, ...
+                mean(quatVeinDistList), mean(quatVeinDistList)/SCALE_FACTOR);
             fclose(fid1);
         else
             fid1 = fopen(csvNameAllStats, 'w');
-            csvHeaders = {'Image ID', '2&3 v. num', '2 v. num', '3 v. num', '4 v. num', 'abnormal case num', 'mean 2&3 v. thickness', 'mean inter dist', 'mean 4 v. interval', 'stdev 4 v. interval', 'vein density'};
+            csvHeaders = {'Image ID', 'ROI (px)', 'ROI (mm)', 'No. Long v. (2+3)', 'Long v. density (vein/px)', ...
+                'Long v. density (vein/mm)', 'No. 2 v.', 'No. 3 v.', 'No. 4 v.', 'No. Irreg v.', ...
+                'Mean v. width (px)', 'Mean v. width (um)', 'Mean interv. dist. (px)', 'Mean interv. dist. (um)', ...
+                'Mean 4 v. interval (px)', 'Mean 4 v. interval (um)'};
             fprintf(fid1, '%s,', csvHeaders{1, 1:end});
             fprintf(fid1, '%s\n', ' ');
-            fprintf(fid1, '%s,%d,%d,%d,%d,%d,%.2f,%.2f,%.2f,%.2f,%.6f', imgRawName(1:end-4), numSecVein+numTerVein, numSecVein, numTerVein, numQuatVein, numAbnormalCases, vertVeinWidthMean, veinDistMean, mean(quatVeinDistList), std(quatVeinDistList), veinDensity);
+            fprintf(fid1, '%s,%.2f,%.6f,%d,%.6f,%.6f,%d,%d,%d,%d,%.2f,%.6f,%.2f,%.6f,%.2f,%.6f', ...
+                imgRawName(1:end-4), roiWidth, roiWidth/SCALE_FACTOR/1000, numSecVein+numTerVein, veinDensity, ...
+                veinDensity*SCALE_FACTOR*1000, numSecVein, numTerVein, numQuatVein, numAbnormalCases, ...
+                vertVeinWidthMean, vertVeinWidthMean/SCALE_FACTOR, veinDistMean, veinDistMean/SCALE_FACTOR, ...
+                mean(quatVeinDistList), mean(quatVeinDistList)/SCALE_FACTOR);
             fclose(fid1);
         end
     end
