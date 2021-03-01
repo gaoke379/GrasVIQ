@@ -38,7 +38,7 @@ IS_JUVENILE = 1; % set to 1 if processing juvenile leaf images or 0 for adult le
 DEBUG = 0; % visualize intermediate results for debugging
 EXPORT_CSV = 1; % export extracted measurements to csv files
 EXPORT_IMG = 1; % save segmentation and classification images to png files
-IMG_FILE_PATH = './Data/'; % path for input images
+IMG_FILE_PATH = './data/'; % path for input images
 IMG_FILE_TYPE = 'png'; % file extension (e.g. png, jpg, jpeg)
 SCALE_FACTOR = 0.6167; % pixels per micrometer (px/um); assume all images in the given input path share the same scale
 
