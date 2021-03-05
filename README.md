@@ -14,7 +14,7 @@ This demo runs GrasVIQ on the sample images in the `data` folder. The batch mode
 ### Parameters
 * `IS_JUVENILE`: flag for juvenile leaf image (set to 1 if processing juvenile leaf images or 0 for adult leaf images) 
 * `DEBUG`: flag for visualizing intermediate results for code debugging
-* `EXPORT_CSV`: flag for exporting extracted measurements as csv files
+* `EXPORT_CSV`: flag for exporting extracted measurements to csv files
 * `EXPORT_IMG`: flag for saving segmentation + classification visualization images as png files
 * `IMG_FILE_PATH`: path for input images
 * `IMG_FILE_TYPE`: file extension for input images (e.g. png, jpg, jpeg)
